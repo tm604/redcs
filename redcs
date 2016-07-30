@@ -12,7 +12,7 @@ use List::MoreUtils qw{ all };
 use HTML::Entities;
 
 our $APP = 'redcs';
-our $VERSION = '1.0.0';
+our $VERSION = '1.1.0';
 
 =pod
 
@@ -92,7 +92,7 @@ sub monitor_subreddit {
 
   my @comments_seen = ();
   while (1) {
-    my $url = "https://www.reddit.com/r/$subreddit/comments.json";
+    my $url = "https://www.reddit.com/r/$subreddit/comments.json?raw_json=1";
 
     my $response = HTTP::Tiny->new->get($url);
     # If the response fails, it is properly because Reddit's servers are
