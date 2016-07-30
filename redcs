@@ -1,0 +1,119 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+use Getopt::Long;
+use Pod::Usage;
+
+use HTTP::Tiny;
+use JSON;
+use List::MoreUtils qw{ all };
+use HTML::Entities;
+
+our $APP = 'redcs';
+our $VERSION = '1.0.0';
+
+=pod
+
+=head1 NAME
+
+redcs - Reddit Comment Stream.
+
+=head1 SYNOPSIS
+
+redcs [OPTIONS]...
+
+=head1 DESCRIPTION
+
+B<redcs> stream reddit comments from a provided subreddit
+
+=head1 OPTIONS
+
+  -h, --help           display this help and exit
+  -m, --man            display the manual
+  -s, --subreddit      subreddit to miniter
+  -i, --interval       interval between pulls in seconds
+      --version        output version information and exit
+
+=head1 AUTHOR
+
+Andreas Louv
+
+=head1 REPORTING BUGS
+
+Report bugs to L<use the issue tracker|https://github.com/andlrc/redcs/issues>.
+
+redcs homepage: L<https://github.com/andlrc/redcs>
+
+=head1 COPYRIGHT
+
+Copyright 2016 the B<redcs>s L</AUTHOR> as listed above
+
+=head1 LICENSE
+
+This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
+
+=cut
+
+my @subreddits = ();
+my $pull_interval = 0;
+
+GetOptions(
+	"help" => sub { pod2usage(-verbose => 1); exit },
+	"man" => sub { pod2usage(-verbose => 3); exit },
+	"subreddit=s" => \@subreddits,
+	"interval" => \$pull_interval,
+	"version" => sub { printf "%s v%s\n", $APP, $VERSION; exit }
+) or exit 1;
+
+if (!@subreddits) {
+  pod2usage(-verbose => 1);
+  exit 1;
+}
+
+# Don’t buffer any output.
+$| = 1;
+
+$pull_interval = @subreddits unless $pull_interval;
+
+foreach my $subreddit (@subreddits) {
+  monitor_subreddit($subreddit, \&handle_comment, $pull_interval);
+}
+
+sub handle_comment {
+  my ($comment) = @_;
+
+  print encode_json($comment) . "\n";
+}
+
+sub monitor_subreddit {
+  my ($subreddit, $callback, $pull_interval) = @_;
+
+  my @comments_seen = ();
+  while (1) {
+    my $url = "https://www.reddit.com/r/$subreddit/comments.json";
+
+    my $response = HTTP::Tiny->new->get($url);
+    # If the response fails, it is properly because Reddit's servers are
+    # temporarily down. Best might be to just wait for a little then try again?
+    if (!$response->{success}) {
+      printf(STDERR "%s, %s for %s\n", $response->{status}, $response->{reason}, $url);
+    }
+    else {
+      my $data = decode_json($response->{content});
+      my @comments = @{$data->{data}->{children}};
+
+      foreach my $comment (@comments) {
+        my $comment_id = $comment->{data}->{id}; # Check if the comment have not been seen already:
+        if (all { $_ ne $comment_id } @comments_seen) {
+          $callback->($comment);
+        }
+      }
+
+      @comments_seen = map { $_->{data}->{id} } @comments;
+    }
+
+    sleep $pull_interval;
+  }
+}

@@ -1,0 +1,41 @@
+=pod
+
+=head1 NAME
+
+redcs - Reddit Comment Stream.
+
+=head1 SYNOPSIS
+
+redcs [OPTIONS]...
+
+=head1 DESCRIPTION
+
+B<redcs> stream reddit comments from a provided subreddit
+
+=head1 OPTIONS
+
+  -h, --help           display this help and exit
+  -m, --man            display the manual
+  -s, --subreddit      subreddit to miniter
+  -i, --interval       interval between pulls in seconds
+      --version        output version information and exit
+
+=head1 AUTHOR
+
+Andreas Louv
+
+=head1 REPORTING BUGS
+
+Report bugs to L<use the issue tracker|https://github.com/andlrc/redcs/issues>.
+
+redcs homepage: L<https://github.com/andlrc/redcs>
+
+=head1 COPYRIGHT
+
+Copyright 2016 the B<redcs>s L</AUTHOR> as listed above
+
+=head1 LICENSE
+
+This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
+
+=cut
