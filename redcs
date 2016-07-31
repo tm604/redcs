@@ -8,7 +8,6 @@ use Pod::Usage;
 
 use HTTP::Tiny;
 use JSON;
-use List::MoreUtils qw{ all };
 use HTML::Entities;
 
 our $APP = 'redcs';
@@ -90,7 +89,7 @@ sub handle_comment {
 sub monitor_subreddit {
   my ($subreddit, $callback, $pull_interval) = @_;
 
-  my @comments_seen = ();
+  my %comments_seen;
   while (1) {
     my $url = "https://www.reddit.com/r/$subreddit/comments.json?raw_json=1";
 
@@ -106,12 +105,11 @@ sub monitor_subreddit {
 
       foreach my $comment (@comments) {
         my $comment_id = $comment->{data}->{id}; # Check if the comment have not been seen already:
-        if (all { $_ ne $comment_id } @comments_seen) {
+        unless (exists $comments_seen{$comment_id}) {
+          $comments_seen{$comment_id} = 1;
           $callback->($comment);
         }
       }
-
-      @comments_seen = map { $_->{data}->{id} } @comments;
     }
 
     sleep $pull_interval;
